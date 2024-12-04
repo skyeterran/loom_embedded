@@ -1,15 +1,33 @@
-use std::io::{self, Write};
+use std::{fs, io::{self, Write}};
+use mlua::{prelude::*, UserData, FromLua, UserDataMethods, Function, Value, Vector};
 
-fn main() {
-    let mut input = String::new();
-    print!("> ");
-    io::stdout().flush().unwrap();
+fn main() -> LuaResult<()> {
+    // Lua environment
+    let source = fs::read_to_string("test.luau").unwrap();
+    let lua = Lua::new();
+    let globals = lua.globals();
+    lua.load(source).exec()?;
 
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read line");
+    loop {
+        // User CLI input
+        let mut input = String::new();
+        print!("> ");
+        io::stdout().flush().unwrap();
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+        let input = input.trim();
 
-    let trimmed_input = input.trim();
+        // Run the user input as Lua code
+        match lua.load(input).eval::<Value>() {
+            Ok(value) => {
+                println!("{:#?}", value);
+            },
+            Err(error) => {
+                println!("ERROR: {:?}", error);
+            }
+        }
+    }
 
-    println!("You said: {}", trimmed_input);
+    Ok(())
 }
