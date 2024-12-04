@@ -1,5 +1,5 @@
 use std::{fs, io::{self, Write}};
-use mlua::{prelude::*, UserData, FromLua, UserDataMethods, Function, Value, Vector};
+use mlua::{prelude::*, Value};
 
 fn main() -> LuaResult<()> {
     // Lua environment
