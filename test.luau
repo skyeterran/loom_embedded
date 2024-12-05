@@ -60,8 +60,18 @@ function look_at_window(fn)
     narrator("You look at the portside window.")
     narrator("What is this place, really?")
     custodian("Looks fucking sexy, right?")
-    player("Excuse me?")
-    custodian("Don't wanna fuck space?")
+    loom.choice{
+        ["yes"] = function()
+            player("I... yes. Yep. So sexy.")
+        end,
+        ["no"] = function()
+            player("Excuse me?")
+            custodian("Don't wanna fuck space?")
+        end,
+        ["maybe"] = function()
+            player("I'm... not decided yet.")
+        end,
+    }
     player(`Your nametag just says \"{custodian.name} the Pervert\".`)
     custodian("I also grease the vacuum robots at night.")
     player("I'm starting over again now.")
