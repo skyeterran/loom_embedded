@@ -19,13 +19,17 @@ fn main() -> LuaResult<()> {
         let input = input.trim();
 
         // Run the user input as Lua code
-        match lua.load(input).eval::<Value>() {
-            Ok(value) => {
-                println!("{:#?}", value);
-            },
-            Err(error) => {
-                println!("ERROR: {:?}", error);
+        if input.starts_with('!') {
+            match lua.load(&input[1..]).eval::<Value>() {
+                Ok(value) => {
+                    println!("{:#?}", value);
+                },
+                Err(error) => {
+                    println!("ERROR: {:?}", error);
+                }
             }
+        } else {
+            lua.load(format!("loom.step(\"{}\")", input)).exec()?;
         }
     }
 
