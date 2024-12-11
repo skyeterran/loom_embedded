@@ -1,5 +1,6 @@
 use std::{env, fs, io::{self, Write}};
 use mlua::{prelude::*, Value};
+use bevy::prelude::*;
 
 fn main() -> LuaResult<()> {
     let args: Vec<String> = env::args().collect();
@@ -14,6 +15,21 @@ fn main() -> LuaResult<()> {
     lua.load(source).exec()?;
     lua.load("loom.run(start)").exec()?;
 
+    App::new()
+        .add_plugins((
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    resolution: (1280.0, 720.0).into(),
+                    title: format!("Loom Demo"),
+                    ..default()
+                }),
+                ..default()
+            }),
+        ))
+        .add_systems(Startup, setup)
+        .run();
+
+    /*
     loop {
         // User CLI input
         let mut input = String::new();
@@ -42,6 +58,28 @@ fn main() -> LuaResult<()> {
             }
         }
     }
+    */
 
     Ok(())
+}
+
+#[derive(Component)]
+struct Caption;
+
+fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>
+) {
+    commands.spawn(Camera2d);
+    commands.spawn((
+        Text::new("Text goes here"),
+        TextLayout::new_with_justify(JustifyText::Center),
+        Node {
+            position_type: PositionType::Relative,
+            align_self: AlignSelf::Center,
+            justify_self: JustifySelf::Center,
+            ..default()
+        },
+        Caption,
+    ));
 }
