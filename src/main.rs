@@ -1,4 +1,4 @@
-use std::{env, fs, io::{self, Write}, iter::empty};
+use std::{env, fs, io::{self, Write}};
 use mlua::{prelude::*, Value};
 
 fn main() -> LuaResult<()> {
