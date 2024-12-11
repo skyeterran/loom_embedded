@@ -1,9 +1,14 @@
-use std::{fs, io::{self, Write}};
+use std::{env, fs, io::{self, Write}};
 use mlua::{prelude::*, Value};
 
 fn main() -> LuaResult<()> {
+    let args: Vec<String> = env::args().collect();
+    let Some(source_file) = args.get(1) else {
+        return Err(LuaError::runtime(format!("No source file specified")));
+    };
+
     // Lua environment
-    let source = fs::read_to_string("test.luau").unwrap();
+    let source = fs::read_to_string(source_file).unwrap();
     let lua = Lua::new();
     let globals = lua.globals();
     lua.load(source).exec()?;
