@@ -1,6 +1,19 @@
-use std::{env, fs, io::{self, Write}};
-use mlua::{prelude::*, Value};
-use bevy::prelude::*;
+use std::{env, fs, io::{self, Write}, sync::{Arc, Mutex}};
+use mlua::{prelude::*, UserData, FromLua, UserDataMethods, Function, Value, Vector};
+use serde::{Deserialize, Serialize};
+use raylib::prelude::*;
+
+#[derive(
+    Serialize,
+    Deserialize,
+    Clone,
+    Debug,
+    FromLua,
+)]
+struct Line {
+    text: String,
+    options: Option<Vec<String>>,
+}
 
 fn main() -> LuaResult<()> {
     let args: Vec<String> = env::args().collect();
@@ -15,71 +28,37 @@ fn main() -> LuaResult<()> {
     lua.load(source).exec()?;
     lua.load("loom.run(start)").exec()?;
 
-    App::new()
-        .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    resolution: (1280.0, 720.0).into(),
-                    title: format!("Loom Demo"),
-                    ..default()
-                }),
-                ..default()
-            }),
-        ))
-        .add_systems(Startup, setup)
-        .run();
+    let (mut rl, thread) = raylib::init()
+        .size(640, 480)
+        .title("Hello, World")
+        .build();
 
-    /*
-    loop {
-        // User CLI input
-        let mut input = String::new();
-        print!("> ");
-        io::stdout().flush().unwrap();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("Failed to read line");
-        let input = input.trim();
+    let mut line = String::new();
+    let mut options: Option<Vec<String>> = None;
 
-        // Run the user input as Lua code
-        if input.starts_with('!') {
-            match lua.load(&input[1..]).eval::<Value>() {
-                Ok(value) => {
-                    println!("{:#?}", value);
-                },
-                Err(error) => {
-                    println!("ERROR: {:?}", error);
+    while !rl.window_should_close() {
+        let mut d = rl.begin_drawing(&thread);
+         
+        d.clear_background(Color::WHITE);
+        if d.is_key_pressed(KeyboardKey::KEY_SPACE) {
+            let x: Line = lua.from_value(lua.load("loom.step(\"yes\")").eval()?)?;
+            line = x.text;
+            options = x.options;
+        }
+        let height = 20;
+        d.draw_text(&line, 12, 12, height, Color::BLACK);
+        if let Some(ref options) = options {
+            for (i, text) in options.iter().enumerate() {
+                let text = format!("--> {}", text);
+                let width = d.measure_text(&text, height);
+                let y = (24 * i as i32) + 32;
+                if i == 0 {
+                    d.draw_rectangle(12, y, width, height, Color::GRAY);
                 }
-            }
-        } else {
-            if input.is_empty() {
-                lua.load("loom.step()").exec()?;
-            } else {
-                lua.load(format!("loom.step(\"{}\")", input)).exec()?;
+                d.draw_text(&text, 12, y, height, Color::BLACK);
             }
         }
     }
-    */
 
     Ok(())
-}
-
-#[derive(Component)]
-struct Caption;
-
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>
-) {
-    commands.spawn(Camera2d);
-    commands.spawn((
-        Text::new("Text goes here"),
-        TextLayout::new_with_justify(JustifyText::Center),
-        Node {
-            position_type: PositionType::Relative,
-            align_self: AlignSelf::Center,
-            justify_self: JustifySelf::Center,
-            ..default()
-        },
-        Caption,
-    ));
 }

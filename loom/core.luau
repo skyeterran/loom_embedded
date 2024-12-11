@@ -51,15 +51,18 @@ local function schedule(fn)
     )
 end
 
+local result = { text = "", options = nil }
 function module.step(input: any?)
     local block = module.convo[#module.convo]
     local alive, value = coroutine.resume(block)
     if alive and value then
         if value.kind == "line" then
             if value.speaker.name then
-                print(`{value.speaker.name}: {value.contents}`)
+                local line = `{value.speaker.name}: {value.contents}`
+                result = { text = line }
             else
-                print(value.contents)
+                local line = value.contents
+                result = { text = line }
             end
         end
         if value.kind == "branch" then
@@ -69,13 +72,13 @@ function module.step(input: any?)
                 module.step()
             else
                 -- TODO: Replace with error()
-                print("Invalid choice!")
+                result = { text = "Invalid choice!" }
             end
         end
         if value.kind == "choice" then
-            print("Choose one:")
+            result = { text = "Choose one:", options = {} }
             for k, _ in value.contents do
-                print(`--> \"{k}\"`)
+                table.insert(result.options, k)
             end
             schedule(function()
                 module.branch(value.contents)
@@ -89,6 +92,8 @@ function module.step(input: any?)
         table.remove(module.convo, #module.convo)
         module.step()
     end
+    
+    return result
 end
 
 return module
