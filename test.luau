@@ -77,5 +77,3 @@ function look_at_window(fn)
     player("I'm starting over again now.")
     loom.jump(fn)
 end
-
-loom.run(start)

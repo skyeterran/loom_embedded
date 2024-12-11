@@ -1,4 +1,4 @@
-use std::{env, fs, io::{self, Write}};
+use std::{env, fs, io::{self, Write}, iter::empty};
 use mlua::{prelude::*, Value};
 
 fn main() -> LuaResult<()> {
@@ -12,6 +12,7 @@ fn main() -> LuaResult<()> {
     let lua = Lua::new();
     let globals = lua.globals();
     lua.load(source).exec()?;
+    lua.load("loom.run(start)").exec()?;
 
     loop {
         // User CLI input
@@ -34,7 +35,11 @@ fn main() -> LuaResult<()> {
                 }
             }
         } else {
-            lua.load(format!("loom.step(\"{}\")", input)).exec()?;
+            if input.is_empty() {
+                lua.load("loom.step()").exec()?;
+            } else {
+                lua.load(format!("loom.step(\"{}\")", input)).exec()?;
+            }
         }
     }
 
