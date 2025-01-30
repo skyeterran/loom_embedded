@@ -1,11 +1,27 @@
+--!nolint UnknownGlobal
+
 local module = {
     convo = nil,
+    characters = {},
+    globals = {},
 }
 
 -- Initializes a character, making it callable
-type Character = { name: string? }
+type Character = {
+    name: string?,
+    color: vector?,
+    align: string?,
+}
 function module.character(char: Character)
+    if not char.align then
+        char.align = "left"
+    end
     setmetatable(char, { __call = module.say })
+    if char.name then
+        module.characters[char.name] = char
+    else
+        module.characters["nil"] = char
+    end
     return char
 end
 
@@ -51,22 +67,25 @@ local function schedule(fn)
     )
 end
 
-local result = { text = "", options = nil }
+local result = {
+    text = "",
+    speaker = nil,
+    options = nil
+}
 function module.step(input: any?)
     local block = module.convo[#module.convo]
     local alive, value = coroutine.resume(block)
     if alive and value then
         if value.kind == "line" then
-            if value.speaker.name then
-                local line = `{value.speaker.name}: {value.contents}`
-                result = { text = line }
-            else
-                local line = value.contents
-                result = { text = line }
-            end
+            result = {
+                text = value.contents,
+                speaker = value.speaker.name,
+                color = value.speaker.color,
+                align = value.speaker.align,
+            }
         end
         if value.kind == "branch" then
-            local chosen = value.contents[input]
+            local chosen = value.contents[input][2]
             if chosen then
                 schedule(chosen)
                 module.step()
@@ -77,8 +96,8 @@ function module.step(input: any?)
         end
         if value.kind == "choice" then
             result = { text = "Choose one:", options = {} }
-            for k, _ in value.contents do
-                table.insert(result.options, k)
+            for _, v in value.contents do
+                table.insert(result.options, v[1])
             end
             schedule(function()
                 module.branch(value.contents)
